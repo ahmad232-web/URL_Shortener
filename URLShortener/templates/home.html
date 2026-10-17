@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URL Shortener</title>
+
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════
+       RESET — Remove default browser spacing
+    ═══════════════════════════════════════════ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════
+       ANIMATED BACKGROUND GLOW
+    ═══════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+      z-index: -1;
+      animation: bgShift 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgShift {
+      0%   { transform: translate(0, 0); }
+      100% { transform: translate(3%, 3%); }
+    }
+
+    /* ═══════════════════════════════════════════
+       PAGE WRAPPER — centers everything
+    ═══════════════════════════════════════════ */
+    .page-wrapper {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ═══════════════════════════════════════════
+       HEADER SECTION
+    ═══════════════════════════════════════════ */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .header .badge {
+      display: inline-block;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .header h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      /* Gradient text effect */
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .header p {
+      color: #94a3b8;
+      font-size: 1.05rem;
+      max-width: 460px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ═══════════════════════════════════════════
+       CARD — the box around the form
+    ═══════════════════════════════════════════ */
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 20px;
+      padding: 36px;
+      backdrop-filter: blur(12px);
+      margin-bottom: 36px;
+    }
+
+    /* ═══════════════════════════════════════════
+       FORM ELEMENTS
+    ═══════════════════════════════════════════ */
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    /* Input and button sit side by side */
+    .input-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .url-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 0.97rem;
+      font-family: 'Inter', sans-serif;
+      color: #e2e8f0;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    /* Glow when focused */
+    .url-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .url-input::placeholder {
+      color: #475569;
+    }
+
+    .btn-shorten {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-shorten:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-shorten:active {
+      transform: translateY(0);
+    }
+
+    /* ═══════════════════════════════════════════
+       ERROR MESSAGE
+    ═══════════════════════════════════════════ */
+    .error-box {
+      margin-top: 16px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #fca5a5;
+      font-size: 0.9rem;
+    }
+
+    /* ═══════════════════════════════════════════
+       SUCCESS RESULT BOX
+    ═══════════════════════════════════════════ */
+    .result-box {
+      margin-top: 24px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 14px;
+      padding: 20px 24px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6ee7b7;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .result-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .short-url-display {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      color: #6ee7b7;
+      word-break: break-all;
+    }
+
+    .short-url-display a {
+      color: #6ee7b7;
+      text-decoration: none;
+    }
+
+    .short-url-display a:hover {
+      text-decoration: underline;
+    }
+
+    .btn-copy {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.3s, transform 0.15s;
+    }
+
+    .btn-copy:hover {
+      background: rgba(16, 185, 129, 0.25);
+      transform: translateY(-1px);
+    }
+
+    /* ═══════════════════════════════════════════
+       HISTORY SECTION TITLE
+    ═══════════════════════════════════════════ */
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title span {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    /* ═══════════════════════════════════════════
+       HISTORY TABLE
+    ═══════════════════════════════════════════ */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    thead {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    th {
+      text-align: left;
+      padding: 14px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .url-cell {
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #94a3b8;
+      font-size: 0.85rem;
+    }
+
+    .short-code-link {
+      color: #818cf8;
+      text-decoration: none;
+      font-weight: 600;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .short-code-link:hover {
+      color: #a5b4fc;
+      text-decoration: underline;
+    }
+
+    .click-badge {
+      display: inline-block;
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════════
+       EMPTY STATE — shown when no links yet
+    ═══════════════════════════════════════════ */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: #475569;
+    }
+
+    .empty-state .icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE — phones
+    ═══════════════════════════════════════════ */
+    @media (max-width: 540px) {
+      .card { padding: 24px 20px; }
+      .input-row { flex-direction: column; }
+      .btn-shorten { width: 100%; }
+      .result-row { flex-direction: column; align-items: stretch; }
+      .btn-copy { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page-wrapper">
+
+    <!-- ══════════════════════════════
+         HEADER
+    ══════════════════════════════ -->
+    <div class="header">
+      <div class="badge">🔗 Free URL Shortener</div>
+      <h1>Shorten Any Link,<br />Instantly.</h1>
+      <p>Paste your long URL below and get a clean, shareable short link in seconds.</p>
+    </div>
+
+
+    <!-- ══════════════════════════════
+         FORM CARD
+
+         method="POST" means the form data
+         is sent to the server when submitted.
+
+         {% csrf_token %} is REQUIRED by Django.
+         It adds a hidden security token that
+         protects against cross-site attacks.
+    ══════════════════════════════ -->
+    <div class="card">
+
+      <form method="POST" action="">
+        {% csrf_token %}
+
+        <label for="original_url" class="form-label">Paste your long URL</label>
+
+        <div class="input-row">
+
+          <input
+            id="original_url"
+            type="url"
+            name="original_url"
+            class="url-input"
+            placeholder="https://example.com/very/long/url/here"
+            required
+          />
+
+          <button type="submit" class="btn-shorten">
+            ✨ Shorten
+          </button>
+
+        </div>
+      </form>
+
+
+      <!-- Show error only if the 'error' variable is not empty -->
+      {% if error %}
+        <div class="error-box">
+          ⚠️ {{ error }}
+        </div>
+      {% endif %}
+
+
+      <!-- Show result only if a short URL was generated -->
+      {% if short_url %}
+        <div class="result-box">
+          <div class="result-label">✅ Your Short Link is Ready!</div>
+          <div class="result-row">
+
+            <div class="short-url-display">
+              <a href="{{ short_url }}" target="_blank">{{ short_url }}</a>
+            </div>
+
+            <!-- onclick calls the JavaScript function at the bottom of the page -->
+            <button class="btn-copy" onclick="copyToClipboard('{{ short_url }}', this)">
+              📋 Copy
+            </button>
+
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+
+
+    <!-- ══════════════════════════════
+         HISTORY TABLE
+
+         all_urls = the list of ShortenedURL
+         objects passed from views.py
+    ══════════════════════════════ -->
+    <div class="section-title">
+      Recent Links
+      <span>{{ all_urls|length }} total</span>
+    </div>
+
+    <div class="table-wrapper">
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Original URL</th>
+            <th>Short Link</th>
+            <th>Clicks</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!--
+            {% for url in all_urls %} — loops through every row in the database.
+            {% empty %}              — runs ONLY when the list has zero items.
+            {% endfor %}             — closes the loop.
+          -->
+          {% for url in all_urls %}
+
+            <tr>
+              <!-- forloop.counter gives the row number: 1, 2, 3 ... -->
+              <td>{{ forloop.counter }}</td>
+
+              <!-- url.original_url = the long URL the user entered -->
+              <td>
+                <div class="url-cell" title="{{ url.original_url }}">
+                  {{ url.original_url }}
+                </div>
+              </td>
+
+              <!-- url.short_code = the 6-character code we generated -->
+              <td>
+                <a class="short-code-link"
+                   href="/go/{{ url.short_code }}/"
+                   target="_blank">
+                  /go/{{ url.short_code }}/
+                </a>
+              </td>
+
+              <!-- url.click_count = how many times this link was visited -->
+              <td>
+                <span class="click-badge">{{ url.click_count }} clicks</span>
+              </td>
+
+              <!-- url.created_at|date:"M d, Y" → formats to "Oct 15, 2026" -->
+              <td>{{ url.created_at|date:"M d, Y" }}</td>
+            </tr>
+
+          {% empty %}
+
+            <!-- This shows when no URLs have been shortened yet -->
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">
+                  <div class="icon">🔗</div>
+                  <p>No links shortened yet. Paste a URL above to get started!</p>
+                </div>
+              </td>
+            </tr>
+
+          {% endfor %}
+
+        </tbody>
+      </table>
+
+    </div>
+
+  </div><!-- end .page-wrapper -->
+
+
+  <!-- ══════════════════════════════
+       JAVASCRIPT
+
+       This function copies the short URL
+       to the user's clipboard when they
+       click the "Copy" button.
+  ══════════════════════════════ -->
+  <script>
+    function copyToClipboard(text, button) {
+
+      // navigator.clipboard.writeText() is the browser's built-in copy function
+      navigator.clipboard.writeText(text).then(function () {
+
+        // Change the button label to show feedback
+        button.textContent = '✅ Copied!';
+
+        // After 2 seconds (2000 ms), reset the button back to original
+        setTimeout(function () {
+          button.textContent = '📋 Copy';
+        }, 2000);
+
+      });
+    }
+  </script>
+
+</body>
+</html>
